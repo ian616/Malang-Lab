@@ -1,0 +1,22 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rider / VS
+.vscode/
+.idea/
+
+# User settings
+UserSettings/
+
+# ML-Agents results
+results/
