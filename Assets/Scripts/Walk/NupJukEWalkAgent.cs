@@ -14,7 +14,7 @@ public class NupJukEWalkAgent : Agent
     // public int maxSteps = 3000;
     public float angleLimitX = 40f;
     public float angleLimitY = 60f;
-    public float angleSmooth = 0.8f;
+    public float angleSmooth = 0.15f;
 
     float[] curAngles = new float[5];
 
