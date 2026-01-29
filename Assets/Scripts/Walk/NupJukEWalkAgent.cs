@@ -6,111 +6,216 @@ using Unity.MLAgents.Actuators;
 
 public class NupJukEWalkAgent : Agent
 {
-    public Transform target;
-    public ConfigurableJoint hipL, hipR, spine2;
+    public GameObject target;
+    public ConfigurableJoint hipL, calfL, hipR, calfR, spine2, shoulderL, shoulderR, handL, handR;
     public Rigidbody spine1Rb;
+    public Rigidbody hipLRb, calfLRb, hipRRb, calfRRb, spine2Rb, shL_Rb, shR_Rb, handLRb, handRRb;
     public Collider headCol;
+    public Transform footL, footR;
 
-    // public int maxSteps = 3000;
-    public float angleLimitX = 40f;
-    public float angleLimitY = 60f;
-    public float angleSmooth = 0.15f;
+    public float angleSmooth = 0.2f;
+    public float liftThreshold = 0.1f;
 
-    float[] curAngles = new float[5];
+    private float[] curActions = new float[12];
+    private float m_PreviousDistance;
+    private float m_RewardDist, m_RewardUpright, m_RewardFace, m_RewardSide, m_RewardRoll, m_RewardBias, m_RewardMove, m_RewardVel, m_RewardTotal, m_DistDelta;
+
+    private float m_RollSum = 0f;
+    private int m_RollCount = 0;
+
+    public bool isGoalReached = false;
+    private GoalDetectionWalk goalDetection;
+
+    private float m_DispDist, m_DispUpright, m_DispFace, m_DispSide, m_DispRoll, m_DispBias, m_DispMove, m_DispVel, m_DispTotal, m_DispActualDist;
+    private float m_GuiTimer;
+    private const float GUI_UPDATE_INTERVAL = 0.3f;
 
     struct RBInit { public Rigidbody rb; public Vector3 pos; public Quaternion rot; }
     List<RBInit> rbInits = new List<RBInit>();
+    List<Rigidbody> bodyParts = new List<Rigidbody>();
+    private bool isHeadTouching;
+    private Transform targetTf;
 
     public override void Initialize()
     {
         rbInits.Clear();
-        foreach (var rb in GetComponentsInChildren<Rigidbody>())
+        bodyParts.Clear();
+        if (target != null)
+        {
+            targetTf = target.transform;
+            goalDetection = target.GetComponent<GoalDetectionWalk>();
+        }
+        var allRbs = GetComponentsInChildren<Rigidbody>();
+        foreach (var rb in allRbs)
+        {
             rbInits.Add(new RBInit { rb = rb, pos = rb.position, rot = rb.rotation });
+            if (rb != spine1Rb) bodyParts.Add(rb);
+        }
     }
 
     public override void OnEpisodeBegin()
     {
+        isGoalReached = false;
+        if (goalDetection != null) goalDetection.ResetGoal();
         foreach (var s in rbInits)
         {
-            s.rb.position = s.pos;
-            s.rb.rotation = s.rot;
-            s.rb.linearVelocity = Vector3.zero;
-            s.rb.angularVelocity = Vector3.zero;
-            s.rb.Sleep();
-            s.rb.WakeUp();
+            s.rb.position = s.pos; s.rb.rotation = s.rot;
+            s.rb.linearVelocity = Vector3.zero; s.rb.angularVelocity = Vector3.zero;
+            s.rb.Sleep(); s.rb.WakeUp();
         }
+        for (int i = 0; i < 12; i++) curActions[i] = 0f;
+        isHeadTouching = false;
+        m_RollSum = 0f;
+        m_RollCount = 0;
 
-        for (int i = 0; i < 5; i++) curAngles[i] = 0f;
-
-        if (target)
-            target.localPosition = new Vector3(Random.Range(-2f, 2f), 0.5f, Random.Range(8f, 10f));
+        if (targetTf != null)
+        {
+            m_PreviousDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
+        }
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        Vector3 toTarget = target.position - spine1Rb.position;
-
+        Vector3 toTarget = targetTf.position - spine1Rb.position;
+        toTarget.y = 0;
         sensor.AddObservation(transform.InverseTransformDirection(toTarget.normalized));
         sensor.AddObservation(toTarget.magnitude);
         sensor.AddObservation(transform.InverseTransformDirection(spine1Rb.linearVelocity));
         sensor.AddObservation(transform.InverseTransformDirection(spine1Rb.angularVelocity));
         sensor.AddObservation(Vector3.Dot(spine1Rb.transform.up, Vector3.up));
-
-        for (int i = 0; i < 5; i++) sensor.AddObservation(curAngles[i]);
+        foreach (float a in curActions) sensor.AddObservation(a);
+        foreach (var rb in bodyParts)
+        {
+            sensor.AddObservation(transform.InverseTransformPoint(rb.position));
+            sensor.AddObservation(rb.transform.localRotation);
+            sensor.AddObservation(transform.InverseTransformDirection(rb.linearVelocity));
+            sensor.AddObservation(transform.InverseTransformDirection(rb.angularVelocity));
+        }
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        var a = actions.ContinuousActions;
-
-        for (int i = 0; i < 5; i++)
+        if (isGoalReached) return;
+        
+        if (spine1Rb.position.z > targetTf.position.z + 0.5f)
         {
-            float targetVal = Mathf.Clamp(a[i], -1f, 1f);
-            curAngles[i] = Mathf.Lerp(curAngles[i], targetVal, angleSmooth);
-        }
-
-        SetJointRotation(hipL, curAngles[0] * angleLimitX, curAngles[1] * angleLimitY, 0f);
-        SetJointRotation(hipR, curAngles[2] * angleLimitX, curAngles[3] * angleLimitY, 0f);
-        SetJointRotation(spine2, curAngles[4] * angleLimitX, 0f, 0f);
-
-        Vector3 toTarget = (target.position - spine1Rb.position).normalized;
-        float velTowards = Vector3.Dot(spine1Rb.linearVelocity, toTarget);
-        float upDot = Vector3.Dot(spine1Rb.transform.up, Vector3.up);
-
-        if (upDot > 0.8f)
-            AddReward(0.001f);
-
-        if (velTowards > 0.05f)
-            AddReward(velTowards * Mathf.Clamp01(upDot) * 0.05f);
-
-        if (upDot > 0.9f)
-            AddReward(0.002f);
-
-        if (upDot < 0.6f || HeadTouchingGround())
-        {
-            SetReward(-1.0f);
             EndEpisode();
             return;
         }
-    }
 
-    void SetJointRotation(ConfigurableJoint j, float x, float y, float z)
-        => j.targetRotation = Quaternion.Euler(x, y, z);
-
-    bool HeadTouchingGround()
-    {
-        if (!headCol) return false;
-        Collider[] hits = Physics.OverlapBox(headCol.bounds.center, headCol.bounds.extents, headCol.transform.rotation);
-        foreach (var h in hits)
+        var a = actions.ContinuousActions;
+        for (int i = 0; i < 12; i++)
         {
-            if (h != headCol && h.CompareTag("Ground")) return true;
+            curActions[i] = Mathf.Lerp(curActions[i], Mathf.Clamp(a[i], -1f, 1f), angleSmooth);
         }
-        return false;
+
+        SetJointRotation(hipL, Map(curActions[0], -20f, 60f), Map(curActions[1], -20f, 20f), 0);
+        SetJointRotation(hipR, Map(curActions[2], -20f, 60f), Map(curActions[3], -20f, 20f), 0);
+        SetJointRotation(spine2, Map(curActions[4], -20f, 20f), Map(curActions[5], -10f, 10f), 0);
+        SetJointRotation(calfL, Map(curActions[6], -80f, 0f), 0, 0);
+        SetJointRotation(calfR, Map(curActions[7], -80f, 0f), 0, 0);
+        SetJointRotation(shoulderL, Map(curActions[8], -10f, 70f), 0, 0);
+        SetJointRotation(shoulderR, Map(curActions[9], -10f, 70f), 0, 0);
+
+        float currentDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
+        m_DistDelta = m_PreviousDistance - currentDistance;
+        float upDot = Vector3.Dot(spine1Rb.transform.up, Vector3.up);
+        float currentVelZ = spine1Rb.linearVelocity.z;
+
+        m_RewardDist = m_DistDelta * 0.5f;
+        m_RewardVel = (currentVelZ > 0) ? currentVelZ * 0.003f : 0f;
+        m_RewardUpright = (upDot < 0.7f) ? 0f : (upDot - 0.7f) / 0.3f * 0.001f;
+
+        float faceDot = Vector3.Dot(spine1Rb.transform.forward, Vector3.forward);
+        m_RewardFace = -(1f - Mathf.Clamp(faceDot, -1f, 1f)) * 0.03f;
+
+        float xDiff = spine1Rb.position.x - targetTf.position.x;
+        m_RewardSide = -Mathf.Pow(xDiff, 2) * 0.1f;
+
+        float rollDot = Vector3.Dot(spine1Rb.transform.right, Vector3.up);
+        m_RollSum += rollDot;
+        m_RollCount++;
+        float rollAverage = m_RollSum / m_RollCount;
+        m_RewardBias = -Mathf.Abs(rollAverage) * 0.1f;
+
+        float rollThreshold = 0.15f;
+        m_RewardRoll = (Mathf.Abs(rollDot) > rollThreshold) ? -0.03f : 0f;
+
+        m_RewardMove = (currentVelZ < 0.5f) ? -0.02f : 0f;
+
+        m_RewardTotal = m_RewardDist + m_RewardVel + m_RewardUpright + m_RewardFace + m_RewardSide + m_RewardBias + m_RewardRoll + m_RewardMove;
+        AddReward(m_RewardTotal);
+
+        if (upDot < 0.6f || isHeadTouching) { SetReward(-5.0f); EndEpisode(); }
+        m_PreviousDistance = currentDistance;
     }
 
-    public void ResetByButton()
+    void Update()
     {
-        Debug.Log("Reset Button Clicked!");
-        EndEpisode();
+        m_GuiTimer += Time.deltaTime;
+        if (m_GuiTimer >= GUI_UPDATE_INTERVAL)
+        {
+            m_DispDist = m_RewardDist;
+            m_DispVel = m_RewardVel;
+            m_DispUpright = m_RewardUpright;
+            m_DispFace = m_RewardFace;
+            m_DispSide = m_RewardSide;
+            m_DispBias = m_RewardBias;
+            m_DispRoll = m_RewardRoll;
+            m_DispMove = m_RewardMove;
+            m_DispTotal = m_RewardTotal;
+            m_DispActualDist = Vector3.Distance(spine1Rb.position, targetTf.position);
+            m_GuiTimer = 0f;
+        }
+    }
+
+    private void OnGUI()
+    {
+        if (Camera.main == null || spine1Rb == null || targetTf == null) return;
+        float distToCam = Vector3.Distance(Camera.main.transform.position, spine1Rb.position);
+        if (distToCam > 25f) return;
+        GUIStyle style = new GUIStyle { fontSize = 24, richText = true };
+        style.normal.textColor = Color.white;
+        GUI.backgroundColor = new Color(0, 0, 0, 0.9f);
+        Rect rect = new Rect(30, 30, 500, 600);
+        GUI.Box(rect, "");
+
+        string debugText = $"<b><size=30>[ NUPJUK STABLE MONITOR ]</size></b>\n" +
+                           $"----------------------------------\n" +
+                           $"Distance : {m_DispActualDist:F2}m\n" +
+                           $"Velocity : {spine1Rb.linearVelocity.magnitude:F2}m/s\n" +
+                           $"----------------------------------\n" +
+                           $"<color=yellow>1. Forward  : {m_DispDist:F4}</color>\n" +
+                           $"<color=#00FF00>2. Vel Bonus: {m_DispVel:F4}</color>\n" +
+                           $"<color=cyan>3. Upright  : {m_DispUpright:F4}</color>\n" +
+                           $"<color=#FF4500>4. Face Pen : {m_DispFace:F4}</color>\n" +
+                           $"<color=#FF8C00>5. Side Pen : {m_DispSide:F4}</color>\n" +
+                           $"<color=#DA70D6>6. Bias Pen : {m_DispBias:F4}</color>\n" +
+                           $"<color=#FF00FF>7. Roll Pen : {m_DispRoll:F4}</color>\n" +
+                           $"<color=grey>8. Move Pen : {m_DispMove:F4}</color>\n" +
+                           $"----------------------------------\n" +
+                           $"<b>TOTAL REWARD : {m_DispTotal:F4}</b>";
+
+        GUI.Label(new Rect(rect.x + 20, rect.y + 15, rect.width - 40, rect.height - 30), debugText, style);
+    }
+
+    float Map(float val, float min, float max) => val >= 0 ? val * max : val * Mathf.Abs(min);
+    void SetJointRotation(ConfigurableJoint j, float x, float y, float z) { if (j != null) j.targetRotation = Quaternion.Euler(x, y, z); }
+    private void OnCollisionEnter(Collision collision) { if (collision.collider.CompareTag("Ground")) { foreach (var contact in collision.contacts) if (contact.thisCollider == headCol) { isHeadTouching = true; break; } } }
+    private void OnCollisionExit(Collision collision) { if (collision.collider.CompareTag("Ground")) isHeadTouching = false; }
+
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
+        var ca = actionsOut.ContinuousActions; float v = -Input.GetAxis("Vertical"); float t = Time.time * 11f;
+        for (int i = 0; i < 12; i++) ca[i] = 0f;
+        if (v != 0)
+        {
+            ca[0] = Mathf.Sin(t) * 1.8f * v; ca[2] = Mathf.Sin(t + Mathf.PI) * 1.8f * v;
+            ca[1] = -Mathf.Max(0, Mathf.Cos(t)) * 4.5f * v; ca[3] = -Mathf.Max(0, Mathf.Cos(t + Mathf.PI)) * 4.5f * v;
+            ca[6] = -Mathf.Max(0, Mathf.Sin(t + 0.5f)) * 3.5f * v; ca[7] = -Mathf.Max(0, Mathf.Sin(t + Mathf.PI + 0.5f)) * 3.5f * v;
+            ca[4] = Mathf.Cos(t) * 0.7f * v; ca[5] = 1.0f * v;
+            ca[8] = Mathf.Sin(t + Mathf.PI) * 1.5f; ca[9] = Mathf.Sin(t) * 1.5f;
+            ca[10] = Mathf.Sin(t + Mathf.PI) * 1.0f; ca[11] = Mathf.Sin(t) * 1.0f;
+        }
     }
 }

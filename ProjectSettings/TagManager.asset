@@ -8,11 +8,13 @@ TagManager:
   - Goal
   - Ground
   - Agent
+  - Ball
+  - Opponent
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Agent
   - Water
   - UI
   - 
