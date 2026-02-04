@@ -9,7 +9,7 @@ public class Ball : MonoBehaviour
     [Header("Side & Back Spawn Settings")]
     public float minRadius = 8f;
     public float maxRadius = 12f;
-    public float yOffset = 0.49f;
+    public float yOffset = 0.29f;
 
     [Header("Spawn Angle Settings")]
     [Range(0f, 360f)] public float minAngle = 90f;
@@ -39,7 +39,6 @@ public class Ball : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        // 인스펙터에서 설정한 범위를 사용하도록 수정
         float randomAngle = Random.Range(minAngle, maxAngle);
         float radius = Random.Range(minRadius, maxRadius);
         float rad = randomAngle * Mathf.Deg2Rad;
@@ -53,22 +52,16 @@ public class Ball : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         string partName = collision.gameObject.name.ToLower();
-        var agent = collision.transform.root.GetComponentInChildren<NupJukESoccerAgent>();
+        var agent = collision.gameObject.GetComponentInParent<NupJukESoccerAgent>();
 
         if (agent != null)
         {
-            if (partName.Contains("hip") || partName.Contains("thigh") ||
-                partName.Contains("calf") || partName.Contains("foot") ||
-                partName.Contains("spine1"))
+            if (partName.Contains("foot") || partName.Contains("spine") || partName.Contains("hip") || partName.Contains("thigh") || partName.Contains("calf"))
             {
-                Debug.Log($"<color=cyan>[Goal]</color> {partName}에 명중! +10점");
+                Debug.Log($"<color=lime>[Success]</color> {partName}으로 터치! +10점");
                 agent.AddReward(10.0f);
-                agent.EndEpisode();
             }
-            else
-            {
-                agent.EndEpisode();
-            }
+            agent.EndEpisode();
         }
     }
 }

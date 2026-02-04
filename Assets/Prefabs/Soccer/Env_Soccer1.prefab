@@ -788,7 +788,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shootForce: 2
   upwardFactor: 0.5
-  minRadius: 1
+  minRadius: 2
   maxRadius: 12
   yOffset: 0.49
   minAngle: 0
@@ -832,6 +832,14 @@ PrefabInstance:
       propertyPath: target
       value: 
       objectReference: {fileID: 3169869192695733552}
+    - target: {fileID: 3124272541227091679, guid: 0137b4b1020204b7689bb9e213093bc7, type: 3}
+      propertyPath: m_HighAngularXLimit.limit
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 4269289951518778558, guid: 0137b4b1020204b7689bb9e213093bc7, type: 3}
+      propertyPath: m_HighAngularXLimit.limit
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6042371996439435859, guid: 0137b4b1020204b7689bb9e213093bc7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -842,7 +850,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6042371996439435859, guid: 0137b4b1020204b7689bb9e213093bc7, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.0453205
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6042371996439435859, guid: 0137b4b1020204b7689bb9e213093bc7, type: 3}
       propertyPath: m_LocalRotation.w

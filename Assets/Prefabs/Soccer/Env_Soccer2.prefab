@@ -788,7 +788,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shootForce: 2
   upwardFactor: 0.5
-  minRadius: 1
+  minRadius: 2
   maxRadius: 12
   yOffset: 0.49
   minAngle: 0

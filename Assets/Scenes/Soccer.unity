@@ -176,6 +176,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_Model
       value: 
@@ -198,6 +202,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 331190593361140705, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: maxAngle
+      value: 250
+      objectReference: {fileID: 0}
+    - target: {fileID: 331190593361140705, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: minAngle
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 331190593361140705, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: maxRadius
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 331190593361140705, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: minRadius
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3054016647467557302, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_LocalPosition.x
       value: 74.76799
@@ -241,6 +261,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_Name
       value: Env_Soccer (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_Model
@@ -303,6 +327,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer2 (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -359,6 +387,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
       propertyPath: m_Name
       value: Env_Soccer2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -484,6 +516,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_Model
       value: 
@@ -602,6 +638,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_Model
       value: 
@@ -667,6 +707,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
       propertyPath: m_Name
       value: Env_Soccer2 (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -851,10 +895,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer (2)
       objectReference: {fileID: 0}
-    - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
-      propertyPath: m_Model
-      value: 
-      objectReference: {fileID: 5022602860645237092, guid: 07a1f770be01a4fa29778e0bd1bbd099, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -911,6 +951,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
       propertyPath: m_Name
       value: Env_Soccer2 (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1097,8 +1141,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1282256312}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.052911643, y: 0.88245744, z: -0.45605668, w: 0.102379784}
-  m_LocalPosition: {x: -39.633793, y: 49.368027, z: 134.96596}
+  m_LocalRotation: {x: -0.06915967, y: 0.91730934, z: -0.34684974, w: -0.18290928}
+  m_LocalPosition: {x: 12.1186075, y: 22.042147, z: 88.69585}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1226,6 +1270,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer2 (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: b4066ed18290a47ab99ad404edaef6ea, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1282,6 +1330,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_Name
       value: Env_Soccer (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_Model
@@ -1424,10 +1476,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer (1)
       objectReference: {fileID: 0}
-    - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
-      propertyPath: m_Model
-      value: 
-      objectReference: {fileID: 5022602860645237092, guid: 07a1f770be01a4fa29778e0bd1bbd099, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1441,6 +1489,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 331190593361140705, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
+      propertyPath: minRadius
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3054016647467557302, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.5
@@ -1485,10 +1537,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Soccer (3)
       objectReference: {fileID: 0}
-    - target: {fileID: 5047134345133990335, guid: d9abd6c98576f4d46aca128fb15e6c80, type: 3}
-      propertyPath: m_Model
-      value: 
-      objectReference: {fileID: 5022602860645237092, guid: 07a1f770be01a4fa29778e0bd1bbd099, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

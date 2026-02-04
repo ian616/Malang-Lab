@@ -771,10 +771,10 @@ PrefabInstance:
       addedObject: {fileID: 3870109332887783068}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ebc9e8534d0bf4ef2b6450875c8ad034, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7652109600856124993}
+      addedObject: {fileID: 2012842853359524353}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ebc9e8534d0bf4ef2b6450875c8ad034, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3301138712807679147}
+      addedObject: {fileID: 986367928716500874}
     - targetCorrespondingSourceObject: {fileID: 7011765297531738668, guid: ebc9e8534d0bf4ef2b6450875c8ad034, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3575984968044623711}
@@ -2513,7 +2513,7 @@ MonoBehaviour:
   m_UseChildActuators: 1
   m_DeterministicInference: 0
   m_ObservableAttributeHandling: 0
---- !u!114 &7652109600856124993
+--- !u!114 &2012842853359524353
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2522,13 +2522,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 7068824166369033114}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 881bdd4ef902d4b07a66d3c2635d1095, type: 3}
+  m_Script: {fileID: 11500000, guid: 12b71450f6ff24a99a57f21bc3c97d3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 5000
+  MaxStep: 0
   target: {fileID: 0}
   hipL: {fileID: 5156087704436944749}
   calfL: {fileID: 136285574878523490}
@@ -2537,6 +2537,8 @@ MonoBehaviour:
   spine2: {fileID: 6099700722287524344}
   shoulderL: {fileID: 1284412716693093804}
   shoulderR: {fileID: 123588725091246029}
+  handL: {fileID: 7842653898045696944}
+  handR: {fileID: 3521824956615307684}
   spine1Rb: {fileID: 8548328003399927791}
   hipLRb: {fileID: 3010148664725478195}
   calfLRb: {fileID: 7566017046179690588}
@@ -2545,9 +2547,15 @@ MonoBehaviour:
   spine2Rb: {fileID: 145102669492552379}
   shL_Rb: {fileID: 601262596450741097}
   shR_Rb: {fileID: 9012620948593419970}
+  handLRb: {fileID: 1594008954920968596}
+  handRRb: {fileID: 1971420815414721765}
   headCol: {fileID: 3855606408479760507}
-  angleSmooth: 0.15
---- !u!114 &3301138712807679147
+  footL: {fileID: 3618194600226433511}
+  footR: {fileID: 3531385041412877709}
+  angleSmooth: 0.2
+  liftThreshold: 0.1
+  isGoalReached: 0
+--- !u!114 &986367928716500874
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
