@@ -6,20 +6,16 @@ public class Ball : MonoBehaviour
     public float shootForce = 2f;
     public float upwardFactor = 0.5f;
 
-    [Header("Side & Back Spawn Settings")]
-    public float minRadius = 8f;
-    public float maxRadius = 12f;
-    public float yOffset = 0.29f;
-
-    [Header("Spawn Angle Settings")]
-    [Range(0f, 360f)] public float minAngle = 90f;
-    [Range(0f, 360f)] public float maxAngle = 270f;
-
     private Rigidbody rb;
+    private Vector3 initialPos;
 
-    void Start()
+    // [추가] 이번 에피소드에서 보상을 이미 줬는지 확인하는 플래그
+    private bool isTouchedThisEpisode = false;
+
+    void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        initialPos = transform.localPosition;
     }
 
     void Update()
@@ -38,30 +34,40 @@ public class Ball : MonoBehaviour
     {
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
+        transform.localPosition = initialPos;
 
-        float randomAngle = Random.Range(minAngle, maxAngle);
-        float radius = Random.Range(minRadius, maxRadius);
-        float rad = randomAngle * Mathf.Deg2Rad;
+        // [중요] 리셋 시 보상 플래그도 초기화
+        isTouchedThisEpisode = false;
 
-        float x = Mathf.Sin(rad) * radius;
-        float z = Mathf.Cos(rad) * radius;
-
-        transform.localPosition = new Vector3(x, yOffset, z);
+        Debug.Log("<color=cyan>[Ball]</color> 위치 및 보상 락 리셋 완료");
     }
 
     private void OnCollisionEnter(Collision collision)
     {
+        if (isTouchedThisEpisode) return;
+
         string partName = collision.gameObject.name.ToLower();
         var agent = collision.gameObject.GetComponentInParent<NupJukESoccerAgent>();
 
         if (agent != null)
         {
-            if (partName.Contains("foot") || partName.Contains("spine") || partName.Contains("hip") || partName.Contains("thigh") || partName.Contains("calf"))
+            if (partName.Contains("foot") || partName.Contains("spine1") ||
+                partName.Contains("hip") || partName.Contains("thigh") || partName.Contains("calf"))
             {
-                Debug.Log($"<color=lime>[Success]</color> {partName}으로 터치! +10점");
-                agent.AddReward(10.0f);
+                agent.AddReward(5.0f);
+
+                agent.hasTouchedBall = true;
+
+                FollowingCam camScript = Camera.main.GetComponent<FollowingCam>();
+                if (camScript != null)
+                {
+                    camScript.StartImpactEffect();
+                }
+
+                isTouchedThisEpisode = true;
+
+                Debug.Log($"<color=lime>[Touch]</color> {partName} 첫 터치! 보상 지급 및 락 설정");
             }
-            agent.EndEpisode();
         }
     }
 }

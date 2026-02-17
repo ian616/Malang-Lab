@@ -197,7 +197,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fefedc92345f14ed09b259e954f16c47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ballTag: Ball
+  goalParts: []
+  glowingMaterial: {fileID: 0}
+  maxIntensity: 5
+  brightenDuration: 1
 --- !u!1 &3468282287381804907
 GameObject:
   m_ObjectHideFlags: 0
@@ -365,7 +368,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3054016647467557302}
   m_Layer: 0
-  m_Name: Env_Shoot
+  m_Name: Env_Shoot1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -925,7 +928,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 993e15e28482040c0896dedef6729515, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shootForce: 0.2
+  shootForce: 0.5
 --- !u!54 &8617947891634206969
 Rigidbody:
   m_ObjectHideFlags: 0

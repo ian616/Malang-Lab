@@ -2,29 +2,29 @@ using UnityEngine;
 
 public class GoalDetector : MonoBehaviour
 {
-    [Header("설정")]
-    [SerializeField] private string ballTag = "Ball"; 
+    [Header("에이전트 연결")]
+    public NupJukESoccerAgent attacker; 
+    public NupJukESoccerAgent defender;
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag(ballTag))
+        if (other.CompareTag("Ball"))
         {
-            Debug.Log("<color=green>⚽ GOAL! 공이 골대를 통과했습니다!</color>");
-            
-            NupJukESoccerAgent agent = FindObjectOfType<NupJukESoccerAgent>();
+            Debug.Log("<color=red>⚽ GOAL!</color>");
 
-            if (agent != null)
-            {
-                agent.AddReward(10.0f);
-                
-                agent.EndEpisode();
-                
-                Debug.Log("<color=yellow>에이전트에게 보상 10점 지급 및 에피소드 리셋</color>");
-            }
-            else
-            {
-                Debug.LogWarning("NupJukESoccerAgent를 찾을 수 없습니다!");
-            }
+            // 1. 공 리셋 (Ball 스크립트 참조)
+            Ball ball = other.GetComponent<Ball>();
+            // if (ball != null) ball.ResetBall();
+
+            // 2. 공격수(Red) 득점 보상
+            if (attacker != null) attacker.AddReward(10.0f);
+
+            // 3. 수비수(Blue) 실점 감점
+            if (defender != null) defender.AddReward(-10.0f);
+
+            // 4. 양쪽 모두 에피소드 리셋
+            // if (attacker != null) attacker.EndEpisode();
+            // if (defender != null) defender.EndEpisode();
         }
     }
 }

@@ -182,7 +182,7 @@ Transform:
   m_GameObject: {fileID: 416462718843206092}
   serializedVersion: 2
   m_LocalRotation: {x: 0.061021052, y: -0, z: -0, w: 0.9981365}
-  m_LocalPosition: {x: -0.5302887, y: -0.7, z: -4.5}
+  m_LocalPosition: {x: -0.5302887, y: -0.76, z: -3.98}
   m_LocalScale: {x: 8.448984, y: 5.2511835, z: 0.30863258}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -217,6 +217,82 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &2302672953311509020
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8935655375299988582}
+  - component: {fileID: 4231337225116827480}
+  - component: {fileID: 5842048381155194292}
+  - component: {fileID: 2951884582243945050}
+  m_Layer: 0
+  m_Name: Detector
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8935655375299988582
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2302672953311509020}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.42, z: -1.77}
+  m_LocalScale: {x: 8.107054, y: 4.8945575, z: 0.39855}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7919260186695650229}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &4231337225116827480
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2302672953311509020}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!65 &5842048381155194292
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2302672953311509020}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &2951884582243945050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2302672953311509020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fefedc92345f14ed09b259e954f16c47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ballTag: Ball
 --- !u!1 &4196340963520729744
 GameObject:
   m_ObjectHideFlags: 0
@@ -584,7 +660,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1f6dc1e5813ca4081b58ff7faff62ef8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -7.16658
+      value: -10.1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1f6dc1e5813ca4081b58ff7faff62ef8, type: 3}
       propertyPath: m_LocalRotation.w
@@ -650,6 +726,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1f6dc1e5813ca4081b58ff7faff62ef8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8065557764153833898}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1f6dc1e5813ca4081b58ff7faff62ef8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8935655375299988582}
     - targetCorrespondingSourceObject: {fileID: -6169468743195361814, guid: 1f6dc1e5813ca4081b58ff7faff62ef8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8903049738338231502}
@@ -729,7 +808,7 @@ Cloth:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3394691686152408805}
-  m_Enabled: 1
+  m_Enabled: 0
   m_StretchingStiffness: 0.4
   m_BendingStiffness: 0
   m_UseTethers: 1
