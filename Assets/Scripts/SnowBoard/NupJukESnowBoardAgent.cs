@@ -6,15 +6,18 @@ using Unity.MLAgents.Actuators;
 
 public class NupJukSnowBoardAgent : Agent
 {
-    #region Inspector Fields
+    #region Inspector Fields (기존 유지)
     [Header("Body Joints")]
     public ConfigurableJoint hipL, calfL, hipR, calfR, spine2, shoulderL, shoulderR, handL, handR;
-    public ConfigurableJoint FootL, FootR; // [추가] 발목 관절
+    public ConfigurableJoint FootL, FootR;
     public Rigidbody spine1Rb;
 
     [Header("Snowboard Integration")]
     public Rigidbody snowboardRb;
     public Rigidbody footLRb, footRRb;
+
+    [Header("Environment Settings")]
+    public Transform envTransform;
 
     [Header("Settings")]
     [Range(0.01f, 1.0f)]
@@ -25,14 +28,15 @@ public class NupJukSnowBoardAgent : Agent
     #endregion
 
     #region Private Fields
-    private float[] curActions = new float[14]; // [수정] 12 -> 14로 확장
+    private float[] curActions = new float[14];
+    private bool isGrounded;
+    private bool isJumping;
+    private bool wasJumping;        // 이전 프레임의 점프 상태
+    private float maxJumpHeight;    // 점프 중 도달한 최고 높이
+    private float envLocalY;
+    private float envLocalZ;
 
-    private struct RBInit
-    {
-        public Rigidbody rb;
-        public Vector3 pos;
-        public Quaternion rot;
-    }
+    private struct RBInit { public Rigidbody rb; public Vector3 pos; public Quaternion rot; }
     private List<RBInit> rbInits = new List<RBInit>();
     private List<Rigidbody> bodyParts = new List<Rigidbody>();
     #endregion
@@ -55,6 +59,10 @@ public class NupJukSnowBoardAgent : Agent
     {
         ResetRigidbodies();
         ResetActions();
+        isGrounded = false;
+        isJumping = false;
+        wasJumping = false;
+        maxJumpHeight = 0f;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -78,20 +86,77 @@ public class NupJukSnowBoardAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actions)
     {
+        UpdateJumpState();
+
+        if (snowboardRb.position.y < 0f)
+        {
+            AddReward(-5.0f);
+            EndEpisode();
+            return;
+        }
+
+        // --- 1. 상태 변화에 따른 보상 (Transitions) ---
+        if (!wasJumping && isJumping) // Stable -> Jump 시작
+        {
+            AddReward(0.1f); // 점프 시도 격려
+            maxJumpHeight = snowboardRb.position.y; // 최고 높이 기록 시작
+            Debug.Log("점프시작!!");
+        }
+        else if (wasJumping && !isJumping) // Jump -> Stable 착지 성공
+        {
+            AddReward(1.0f); // 착지 성공 보상 (훨씬 크게 부여)
+            // (예: 높이 1m당 0.1점 추가 보상, 맵 스케일에 맞춰 조절하세요)
+            float heightBonus = Mathf.Max(0, maxJumpHeight - 35f) * 0.1f;
+            AddReward(heightBonus);
+
+            Debug.Log($"착지성공!! Max Height: {maxJumpHeight}");
+
+            maxJumpHeight = 0f; // 기록 초기화
+
+        }
+
+        // 점프 중일 때 실시간으로 최고 높이 갱신
+        if (isJumping)
+        {
+            maxJumpHeight = Mathf.Max(maxJumpHeight, snowboardRb.position.y);
+        }
+
+        wasJumping = isJumping; // 상태 업데이트
+
         UpdateActions(actions);
         ApplyJointRotations();
+
+        // --- 2. 속도 보상 (Forward Speed) ---
+        AddReward(0.001f); // 생존 보상
+
+        Vector3 forwardDir = snowboardRb.transform.right;
+        float forwardSpeed = Vector3.Dot(snowboardRb.linearVelocity, forwardDir);
+
+        if (forwardSpeed > 0)
+        {
+            AddReward(forwardSpeed * 0.01f); // 전진 속도 보상
+        }
+    }
+
+    private void UpdateJumpState()
+    {
+        if (envTransform == null) return;
+
+        Vector3 localPos = envTransform.InverseTransformPoint(snowboardRb.position);
+        envLocalY = localPos.y;
+        envLocalZ = localPos.z;
+
+        isJumping = (Mathf.Abs(envLocalZ) > 15) || (envLocalY > 35);
     }
     #endregion
 
-    #region Joint & Physics Logic
+    #region Physics & Utility (기존 로직 유지)
     private void AttachFeetToBoard()
     {
         if (snowboardRb == null || footLRb == null || footRRb == null) return;
 
-        // 이미 조인트가 있다면 제거하고 새로 만듦 (중복 방지)
         foreach (var joint in footLRb.GetComponents<FixedJoint>()) DestroyImmediate(joint);
         foreach (var joint in footRRb.GetComponents<FixedJoint>()) DestroyImmediate(joint);
-
 
         FixedJoint leftJoint = footLRb.gameObject.AddComponent<FixedJoint>();
         leftJoint.connectedBody = snowboardRb;
@@ -99,13 +164,13 @@ public class NupJukSnowBoardAgent : Agent
         leftJoint.enableCollision = false;
         leftJoint.breakForce = Mathf.Infinity;
 
-
         FixedJoint rightJoint = footRRb.gameObject.AddComponent<FixedJoint>();
         rightJoint.connectedBody = snowboardRb;
         rightJoint.autoConfigureConnectedAnchor = true;
         rightJoint.enableCollision = false;
         rightJoint.breakForce = Mathf.Infinity;
     }
+
     private void InitializeRigidbodies()
     {
         rbInits.Clear();
@@ -186,76 +251,58 @@ public class NupJukSnowBoardAgent : Agent
         SetJointRotation(FootL, Map(curActions[12], -30f, 30f), 0, 0);
         SetJointRotation(FootR, Map(curActions[13], -30f, 30f), 0, 0);
     }
-    #endregion
 
     public void HandleBoardCollision(Collision collision)
     {
+        if (collision.gameObject.CompareTag("Ground")) isGrounded = true;
         float impactSpeed = collision.relativeVelocity.magnitude;
-
         if (collision.gameObject.CompareTag("Ground") && impactSpeed > 3.0f)
         {
             if (landingParticle != null)
             {
                 Vector3 spawnPos = collision.contacts[0].point;
                 ParticleSystem effect = Instantiate(landingParticle, spawnPos, Quaternion.Euler(-90, 0, 0));
-
-                var main = effect.main;
-
-                float sizeMultiplier = impactSpeed * 10f;
-                Debug.Log($"{sizeMultiplier}");
-
-                main.startSizeMultiplier = Mathf.Clamp(sizeMultiplier, 5.0f, 100f);
-
                 effect.Play();
                 Destroy(effect.gameObject, 3.0f);
             }
         }
     }
 
-    #region Physics Update
+    public void HandleHeadCollision()
+    {
+        AddReward(-5.0f);
+        EndEpisode();
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground")) isGrounded = false;
+    }
+
     void FixedUpdate()
     {
-        if (snowboardRb == null) return;
+        if (Input.GetKeyDown(KeyCode.T)) { EndEpisode(); return; }
+        if (snowboardRb == null || !isGrounded) return;
 
         Vector3 currentVel = snowboardRb.linearVelocity;
-        // 사용자 설정에 따른 전진 방향 (Right)
         Vector3 forwardDir = snowboardRb.transform.right;
-
         Vector3 forwardVel = Vector3.Project(currentVel, forwardDir);
         Vector3 sideVel = currentVel - forwardVel;
-
         snowboardRb.AddForce(-sideVel * 10f, ForceMode.Acceleration);
 
         float roll = snowboardRb.transform.localEulerAngles.z;
         if (roll > 180) roll -= 360;
-
-        // GUI 출력을 위한 데이터 저장
         currentSpeed = forwardVel.magnitude;
 
         if (currentSpeed > 0.1f && Mathf.Abs(roll) > 1.0f)
         {
             float sidecutRadius = 5.0f;
-            // 순수 물리 카빙 반지름 공식: R = R_sidecut / cos(theta)
             currentTurnRadius = sidecutRadius / Mathf.Max(Mathf.Cos(roll * Mathf.Deg2Rad), 0.05f);
-
-            float speed = forwardVel.magnitude;
-            float centripetalForce = (snowboardRb.mass * speed * speed) / sidecutRadius;
-            currentForce = centripetalForce * 0.5f;
-
+            float centripetalForce = (snowboardRb.mass * currentSpeed * currentSpeed) / sidecutRadius;
             snowboardRb.AddForce(snowboardRb.transform.right * centripetalForce * Mathf.Sign(roll), ForceMode.Force);
         }
-        else
-        {
-            currentTurnRadius = 0f;
-            currentForce = 0f;
-        }
-
-        Debug.DrawRay(snowboardRb.position, forwardVel, Color.blue);
-        Debug.DrawRay(snowboardRb.position, -sideVel, Color.red);
     }
-    #endregion
 
-    #region Utility Methods
     private float Map(float val, float min, float max)
     {
         return val >= 0 ? val * max : val * Mathf.Abs(min);
@@ -265,76 +312,75 @@ public class NupJukSnowBoardAgent : Agent
     {
         if (j != null) j.targetRotation = Quaternion.Euler(x, y, z);
     }
-    #endregion
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            EndEpisode();
-            return;
-        }
         var continuousActionsOut = actionsOut.ContinuousActions;
         for (int i = 0; i < 14; i++) continuousActionsOut[i] = 0f;
-
-        float horizontal = 0f;
-        if (Input.GetKey(KeyCode.J)) horizontal = -1f;
-        else if (Input.GetKey(KeyCode.L)) horizontal = 1f;
-
-        continuousActionsOut[5] = horizontal;
-        continuousActionsOut[1] = horizontal * 0.5f;
-        continuousActionsOut[3] = horizontal * 0.5f;
-
-        float vertical = 0f;
-        if (Input.GetKey(KeyCode.I)) vertical = 1f;
-        else if (Input.GetKey(KeyCode.K)) vertical = -1f;
-
-        float moveStrength = vertical * 0.3f;
-
-        continuousActionsOut[4] = -moveStrength;
-        continuousActionsOut[0] = moveStrength;
-        continuousActionsOut[2] = moveStrength;
-        continuousActionsOut[6] = moveStrength;
-        continuousActionsOut[7] = moveStrength;
-        continuousActionsOut[12] = moveStrength;
-        continuousActionsOut[13] = moveStrength;
+        if (Input.GetKey(KeyCode.Space))
+        {
+            float time = Time.time * 10f;
+            float backWave = (Mathf.Sin(time) + 1f) / 2f;
+            float frontWave = (Mathf.Sin(time - 1.5f) + 1f) / 2f;
+            continuousActionsOut[2] = backWave * 0.7f;
+            continuousActionsOut[7] = backWave * -1.0f;
+            continuousActionsOut[13] = backWave * 0.8f;
+            continuousActionsOut[0] = frontWave * 0.7f;
+            continuousActionsOut[6] = frontWave * -1.0f;
+            continuousActionsOut[12] = frontWave * 0.8f;
+            continuousActionsOut[4] = backWave * -0.8f;
+        }
     }
+    #endregion
 
     private void OnGUI()
     {
-        float boxWidth = 600;
-        float boxHeight = 180;
+        float boxWidth = 500;
+        float boxHeight = 350;
         float padding = 20;
 
         Texture2D bgTexture = new Texture2D(1, 1);
-        bgTexture.SetPixel(0, 0, new Color(0.05f, 0.1f, 0.22f, 0.85f));
+        bgTexture.SetPixel(0, 0, new Color(0.02f, 0.05f, 0.1f, 0.9f));
         bgTexture.Apply();
 
         GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
         boxStyle.normal.background = bgTexture;
 
         GUIStyle labelStyle = new GUIStyle();
-        labelStyle.fontSize = 26;
+        labelStyle.fontSize = 20;
         labelStyle.fontStyle = FontStyle.Bold;
-        labelStyle.padding = new RectOffset(10, 10, 5, 5);
+        labelStyle.padding = new RectOffset(5, 5, 2, 2);
 
         GUI.Box(new Rect(10, 10, boxWidth, boxHeight), "", boxStyle);
 
         GUILayout.BeginArea(new Rect(10 + padding, 20, boxWidth - (padding * 2), boxHeight));
         {
             labelStyle.normal.textColor = Color.cyan;
-            GUILayout.Label("▲ NUPJUK PHYSICS MONITOR", labelStyle);
-            GUILayout.Space(12);
+            GUILayout.Label("▲ NUPJUK JUMP & PHYSICS MONITOR", labelStyle);
+            GUILayout.Space(10);
 
             labelStyle.normal.textColor = new Color(0.5f, 1.0f, 0.5f);
-            GUILayout.Label($"SPEED : {currentSpeed:F2} m/s", labelStyle);
+            GUILayout.Label($"SPEED  : {currentSpeed:F2} m/s", labelStyle);
+
+            string radiusText = currentTurnRadius > 0 ? $"{currentTurnRadius:F2} m" : "---";
+            GUILayout.Label($"RADIUS : {radiusText}", labelStyle);
+
+            labelStyle.normal.textColor = Color.gray;
+            GUILayout.Label("--------------------------------------", labelStyle);
+
+            labelStyle.normal.textColor = Color.white;
+            GUILayout.Label($"Env Local Y : {envLocalY:F2}", labelStyle);
+            GUILayout.Label($"Env Local Z : {envLocalZ:F2}", labelStyle);
+
+            labelStyle.normal.textColor = Color.gray;
+            GUILayout.Label("--------------------------------------", labelStyle);
+
+            labelStyle.normal.textColor = isJumping ? Color.red : Color.gray;
+            string jumpStatus = isJumping ? "● JUMPING" : "○ STABLE";
+            GUILayout.Label($"STATE : {jumpStatus}", labelStyle);
 
             labelStyle.normal.textColor = new Color(1.0f, 0.9f, 0.3f);
-            string radiusText = currentTurnRadius > 0 ? $"{currentTurnRadius:F2} m" : "---";
-            GUILayout.Label($"RADIUS: {radiusText}", labelStyle);
-
-            labelStyle.normal.textColor = new Color(1.0f, 0.4f, 0.4f);
-            GUILayout.Label($"FORCE : {currentForce:F1} N", labelStyle);
+            GUILayout.Label($"MAX JUMP HEIGHT : {maxJumpHeight:F2} m", labelStyle);
         }
         GUILayout.EndArea();
     }

@@ -2856,6 +2856,7 @@ MonoBehaviour:
   footLRb: {fileID: 6143604780326090955}
   footRRb: {fileID: 5687566295978576854}
   angleSmooth: 0.2
+  landingParticle: {fileID: 0}
 --- !u!1 &7492952390633685594
 GameObject:
   m_ObjectHideFlags: 0
