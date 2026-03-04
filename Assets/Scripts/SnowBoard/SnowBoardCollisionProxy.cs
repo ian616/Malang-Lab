@@ -8,4 +8,9 @@ public class SnowboardCollisionProxy : MonoBehaviour
     {
         if (agent != null) agent.HandleBoardCollision(collision);
     }
+    private void OnCollisionExit(Collision collision)
+    {
+        var agent = GetComponentInParent<NupJukSnowBoardAgent>();
+        if (agent != null) agent.HandleBoardCollisionExit(collision);
+    }
 }
