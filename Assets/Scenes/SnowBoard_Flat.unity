@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 5464c15ff9c6ca04cb5790c1773e76fa, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 20f6d22d93779de4ea6f62f8ab305593, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -119,6 +119,11 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!4 &548904207 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5747861524617520512, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
+  m_PrefabInstance: {fileID: 5581138552600325249}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &577816800
 GameObject:
   m_ObjectHideFlags: 0
@@ -138,7 +143,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &577816801
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -218,7 +223,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 109188188373118978}
+    TrackingTarget: {fileID: 548904207}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -658,11 +663,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &109188188373118978 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6798992477745846218, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
-  m_PrefabInstance: {fileID: 5581138552600325249}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5581138552600325249
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -674,6 +674,18 @@ PrefabInstance:
     - target: {fileID: 385175268766053396, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
       propertyPath: m_Name
       value: Env_Flat
+      objectReference: {fileID: 0}
+    - target: {fileID: 2857137568530034930, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2857137568530034930, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 4.27
+      objectReference: {fileID: 0}
+    - target: {fileID: 2857137568530034930, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 43.19
       objectReference: {fileID: 0}
     - target: {fileID: 6014363378166476715, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
       propertyPath: m_LocalPosition.x
@@ -715,13 +727,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6264170610927834912, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
-      propertyPath: boardTrail
-      value: 
+    - target: {fileID: 8186924173930387109, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
+      propertyPath: rangeX
+      value: 10
       objectReference: {fileID: 0}
-    - target: {fileID: 6748586521599171237, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
-      propertyPath: m_Mass
-      value: 0.3
+    - target: {fileID: 8186924173930387109, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
+      propertyPath: rangeZ
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8186924173930387109, guid: 625c4ec71a19444a9994a2b385926eee, type: 3}
+      propertyPath: groundLayer.m_Bits
+      value: 64
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
