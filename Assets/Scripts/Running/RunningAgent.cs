@@ -16,7 +16,7 @@ public class RunningAgent : Agent
     public float angleSmooth = 0.2f;
 
     private float[] curActions = new float[12];
-    private float m_PreviousDistance;
+    private float m_PreviousDistance, m_StartingZ;
     private float m_RewardDist, m_RewardUpright, m_RewardFace, m_RewardSide, m_RewardMove, m_RewardTotal, m_DistDelta;
 
     private float m_DispDist, m_DispUpright, m_DispFace, m_DispSide, m_DispMove, m_DispTotal, m_DispVel, m_DispActualDist;
@@ -36,30 +36,33 @@ public class RunningAgent : Agent
     {
         rbInits.Clear();
         bodyParts.Clear();
-
         if (target != null) targetTf = target.transform;
 
-        var allRbs = GetComponentsInChildren<Rigidbody>();
+        Rigidbody[] allRbs = GetComponentsInChildren<Rigidbody>();
+
         foreach (var rb in allRbs)
         {
             rbInits.Add(new RBInit { rb = rb, pos = rb.position, rot = rb.rotation });
             if (rb != spine1Rb) bodyParts.Add(rb);
         }
 
-        for (int i = 0; i < bodyParts.Count; i++)
+        for (int i = 0; i < allRbs.Length; i++)
         {
-            for (int j = i + 1; j < bodyParts.Count; j++)
+            for (int j = i + 1; j < allRbs.Length; j++)
             {
-                Collider colA = bodyParts[i].GetComponent<Collider>();
-                Collider colB = bodyParts[j].GetComponent<Collider>();
-                if (colA != null && colB != null) Physics.IgnoreCollision(colA, colB);
+                Collider colA = allRbs[i].GetComponent<Collider>();
+                Collider colB = allRbs[j].GetComponent<Collider>();
+
+                if (colA != null && colB != null)
+                {
+                    Physics.IgnoreCollision(colA, colB);
+                }
             }
         }
     }
 
     public override void OnEpisodeBegin()
     {
-        Debug.Log(gameObject.name + " 에피소드 시작!");
         foreach (var s in rbInits)
         {
             s.rb.position = s.pos; s.rb.rotation = s.rot;
@@ -69,8 +72,11 @@ public class RunningAgent : Agent
 
         for (int i = 0; i < 12; i++) curActions[i] = 0f;
         isHeadTouching = false;
-        if (targetTf != null) m_PreviousDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
         m_ObstacleIndex = 0;
+
+        if (targetTf != null) m_PreviousDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
+        // 시작 시점의 Z축(좌우) 위치 저장
+        m_StartingZ = spine1Rb.position.z;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -96,14 +102,17 @@ public class RunningAgent : Agent
         {
             GameObject curObs = obstacleList[m_ObstacleIndex];
             Vector3 relPos = transform.InverseTransformPoint(curObs.transform.position);
-            sensor.AddObservation(relPos.x); sensor.AddObservation(relPos.z);
-            sensor.AddObservation(curObs.transform.localScale.y); sensor.AddObservation(curObs.transform.localScale.x);
+            // X: 거리(전방), Z: 좌우 편차
+            sensor.AddObservation(relPos.x);
+            sensor.AddObservation(relPos.z);
+            sensor.AddObservation(curObs.transform.localScale.y);
+            sensor.AddObservation(curObs.transform.localScale.x);
             m_ObsRelX = relPos.x; m_ObsRelZ = relPos.z; m_ObsH = curObs.transform.localScale.y;
         }
         else
         {
-            sensor.AddObservation(0f); sensor.AddObservation(50f); sensor.AddObservation(0f); sensor.AddObservation(0f);
-            m_ObsRelX = 0f; m_ObsRelZ = 50f; m_ObsH = 0f;
+            sensor.AddObservation(50f); sensor.AddObservation(0f); sensor.AddObservation(0f); sensor.AddObservation(0f);
+            m_ObsRelX = 50f; m_ObsRelZ = 0f; m_ObsH = 0f;
         }
     }
 
@@ -126,8 +135,10 @@ public class RunningAgent : Agent
 
         m_RewardDist = m_DistDelta * 0.5f;
         m_RewardUpright = (upDot < 0.7f) ? 0f : (upDot - 0.7f) / 0.3f * 0.005f;
-        m_RewardFace = -(1f - Mathf.Clamp(Vector3.Dot(spine1Rb.transform.forward, Vector3.forward), -1f, 1f)) * 0.03f;
-        m_RewardSide = -Mathf.Pow(spine1Rb.position.x - targetTf.position.x, 2) * 0.03f;
+        // X축 방향 정렬 보상
+        m_RewardFace = -(1f - Mathf.Clamp(Vector3.Dot(spine1Rb.transform.forward, Vector3.right), -1f, 1f)) * 0.03f;
+        // 사이드 보상: 시작 Z 위치와의 차이 계산
+        m_RewardSide = -Mathf.Pow(spine1Rb.position.z - m_StartingZ, 2) * 0.03f;
         m_RewardMove = (spine1Rb.linearVelocity.magnitude < 0.2f) ? -0.05f : 0f;
 
         m_RewardTotal = m_RewardDist + m_RewardUpright + m_RewardFace + m_RewardSide + m_RewardMove;
@@ -136,9 +147,10 @@ public class RunningAgent : Agent
         if (upDot < 0.6f || isHeadTouching) { SetReward(-5.0f); EndEpisode(); }
         m_PreviousDistance = currentDistance;
 
+        // 장애물 통과 업데이트 (X축 기준)
         if (obstacleList != null && m_ObstacleIndex < obstacleList.Count)
         {
-            if (obstacleList[m_ObstacleIndex].transform.position.z - spine1Rb.position.z < -0.6f) m_ObstacleIndex++;
+            if (obstacleList[m_ObstacleIndex].transform.position.x - spine1Rb.position.x < -0.6f) m_ObstacleIndex++;
         }
     }
 
@@ -170,18 +182,16 @@ public class RunningAgent : Agent
                            $"----------------------------------\n" +
                            $"<b>[ OBSTACLE INFO ]</b>\n" +
                            $"Index    : {m_ObstacleIndex} / {obstacleList?.Count ?? 0}\n" +
-                           $"Obs Dist : {m_ObsRelZ:F2}m\n" +
-                           $"Obs Height: {m_ObsH:F2}m\n" +
+                           $"Rel Dist(X): {m_ObsRelX:F2}m\n" +
+                           $"Rel Side(Z): {m_ObsRelZ:F2}m\n" +
                            $"----------------------------------\n" +
                            $"<color=yellow>Forward  : {m_DispDist:F4}</color>\n" +
                            $"<color=cyan>Upright  : {m_DispUpright:F4}</color>\n" +
-                           $"<color=#FF4500>Face Pen : {m_DispFace:F4}</color>\n" +
                            $"<color=#FF8C00>Side Pen : {m_DispSide:F4}</color>\n" +
                            $"----------------------------------\n" +
                            $"<b>TOTAL    : {m_DispTotal:F4}</b>";
         GUI.Label(new Rect(rect.x + 20, rect.y + 15, rect.width - 40, rect.height - 30), debugText, style);
     }
-
 
     float Map(float val, float min, float max) => val >= 0 ? val * max : val * Mathf.Abs(min);
     void SetJointRotation(ConfigurableJoint j, float x, float y, float z) { if (j != null) j.targetRotation = Quaternion.Euler(x, y, z); }
@@ -192,7 +202,8 @@ public class RunningAgent : Agent
     {
         var ca = actionsOut.ContinuousActions; float v = -Input.GetAxis("Vertical"); float t = Time.time * 11f;
         for (int i = 0; i < 12; i++) ca[i] = 0f;
-        if (v != 0) {
+        if (v != 0)
+        {
             ca[0] = Mathf.Sin(t) * 1.8f * v; ca[2] = Mathf.Sin(t + Mathf.PI) * 1.8f * v;
             ca[1] = -Mathf.Max(0, Mathf.Cos(t)) * 4.5f * v; ca[3] = -Mathf.Max(0, Mathf.Cos(t + Mathf.PI)) * 4.5f * v;
             ca[6] = -Mathf.Max(0, Mathf.Sin(t + 0.5f)) * 3.5f * v; ca[7] = -Mathf.Max(0, Mathf.Sin(t + Mathf.PI + 0.5f)) * 3.5f * v;
