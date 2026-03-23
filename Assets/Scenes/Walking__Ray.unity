@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -227,6 +231,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_Name
       value: Env_Walk_Ray (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -285,6 +293,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -341,6 +353,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_Name
       value: Env_Walk_Ray (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -520,6 +536,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -576,6 +596,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_Name
       value: Env_Walk_Ray (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -634,6 +658,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -691,6 +719,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -747,6 +779,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_Name
       value: Env_Walk_Ray (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -811,7 +847,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -905,8 +941,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1282256312}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.056020092, y: 0.9437079, z: -0.24178204, w: -0.21867482}
-  m_LocalPosition: {x: -61.863564, y: 6.67468, z: 115.71565}
+  m_LocalRotation: {x: 0.0152318245, y: 0.98179656, z: -0.16682433, w: 0.08951678}
+  m_LocalPosition: {x: -6.430106, y: 9.735981, z: 29.365358}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -990,6 +1026,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1456392460910256321, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 1998168071}
+    - target: {fileID: 1714459024529890800, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2787347849014903730, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.005
+      objectReference: {fileID: 0}
+    - target: {fileID: 2787347849014903730, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0
+      objectReference: {fileID: 0}
     - target: {fileID: 3054016647467557302, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1030,9 +1082,45 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4209822481168612444, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_Model
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_Name
       value: Env_Walk_Ray
+      objectReference: {fileID: 0}
+    - target: {fileID: 7389134162535275488, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 10.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 7467780758599216176, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 9.17
+      objectReference: {fileID: 0}
+    - target: {fileID: 7908508908483641690, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8123221931650648819, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_Model
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8123221931650648819, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_BrainParameters.VectorActionSpaceType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8123221931650648819, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_BrainParameters.VectorActionSize.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8123221931650648819, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: 'm_BrainParameters.VectorActionSize.Array.data[0]'
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 8123221931650648819, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_BrainParameters.m_ActionSpec.m_NumContinuousActions
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1091,6 +1179,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1147,6 +1239,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_Name
       value: Env_Walk_Ray (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1205,6 +1301,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1261,6 +1361,10 @@ PrefabInstance:
     - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
       propertyPath: m_Name
       value: Env_Walk_Ray (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1319,6 +1423,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Env_Walk_Ray (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 4731459076994346142, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1373,6 +1481,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1998168071 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8177147988920176925, guid: c88f151f5910942858e09d6487c3c1ed, type: 3}
+  m_PrefabInstance: {fileID: 1402247442}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

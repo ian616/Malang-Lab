@@ -51,6 +51,19 @@ public class NupJukEJumpAgent : Agent
             rbInits.Add(new RBInit { rb = rb, pos = rb.position, rot = rb.rotation });
             if (rb != spine1Rb) bodyParts.Add(rb);
         }
+
+        for (int i = 0; i < bodyParts.Count; i++)
+        {
+            for (int j = i + 1; j < bodyParts.Count; j++)
+            {
+                Collider colA = bodyParts[i].GetComponent<Collider>();
+                Collider colB = bodyParts[j].GetComponent<Collider>();
+                if (colA != null && colB != null)
+                {
+                    Physics.IgnoreCollision(colA, colB);
+                }
+            }
+        }
     }
 
     public override void OnEpisodeBegin()
@@ -164,33 +177,33 @@ public class NupJukEJumpAgent : Agent
         }
     }
 
-    private void OnGUI()
-    {
-        if (Camera.main == null || spine1Rb == null || targetTf == null) return;
-        float distToCam = Vector3.Distance(Camera.main.transform.position, spine1Rb.position);
-        if (distToCam > 25f) return;
+    // private void OnGUI()
+    // {
+    //     if (Camera.main == null || spine1Rb == null || targetTf == null) return;
+    //     float distToCam = Vector3.Distance(Camera.main.transform.position, spine1Rb.position);
+    //     if (distToCam > 25f) return;
 
-        GUIStyle style = new GUIStyle { fontSize = 28, richText = true };
-        style.normal.textColor = Color.white;
-        GUI.backgroundColor = new Color(0, 0, 0, 0.9f);
-        Rect rect = new Rect(30, 30, 500, 480);
-        GUI.Box(rect, "");
+    //     GUIStyle style = new GUIStyle { fontSize = 28, richText = true };
+    //     style.normal.textColor = Color.white;
+    //     GUI.backgroundColor = new Color(0, 0, 0, 0.9f);
+    //     Rect rect = new Rect(30, 30, 500, 480);
+    //     GUI.Box(rect, "");
 
-        string debugText = $"<b><size=32>[ NUPJUK MONITOR ]</size></b>\n" +
-                           $"----------------------------------\n" +
-                           $"Distance : {m_DispActualDist:F2}m\n" +
-                           $"Velocity : {m_DispVel:F2}m/s\n" +
-                           $"----------------------------------\n" +
-                           $"<color=yellow>Forward  : {m_DispDist:F4}</color>\n" +
-                           $"<color=cyan>Upright  : {m_DispUpright:F4}</color>\n" +
-                           $"<color=#FF4500>Face Pen : {m_DispFace:F4}</color>\n" +
-                           $"<color=#FF8C00>Side Pen : {m_DispSide:F4}</color>\n" +
-                           $"<color=grey>Move Pen : {m_DispMove:F4}</color>\n" +
-                           $"----------------------------------\n" +
-                           $"<b>TOTAL    : {m_DispTotal:F4}</b>";
+    //     string debugText = $"<b><size=32>[ NUPJUK MONITOR ]</size></b>\n" +
+    //                        $"----------------------------------\n" +
+    //                        $"Distance : {m_DispActualDist:F2}m\n" +
+    //                        $"Velocity : {m_DispVel:F2}m/s\n" +
+    //                        $"----------------------------------\n" +
+    //                        $"<color=yellow>Forward  : {m_DispDist:F4}</color>\n" +
+    //                        $"<color=cyan>Upright  : {m_DispUpright:F4}</color>\n" +
+    //                        $"<color=#FF4500>Face Pen : {m_DispFace:F4}</color>\n" +
+    //                        $"<color=#FF8C00>Side Pen : {m_DispSide:F4}</color>\n" +
+    //                        $"<color=grey>Move Pen : {m_DispMove:F4}</color>\n" +
+    //                        $"----------------------------------\n" +
+    //                        $"<b>TOTAL    : {m_DispTotal:F4}</b>";
 
-        GUI.Label(new Rect(rect.x + 20, rect.y + 15, rect.width - 40, rect.height - 30), debugText, style);
-    }
+    //     GUI.Label(new Rect(rect.x + 20, rect.y + 15, rect.width - 40, rect.height - 30), debugText, style);
+    // }
 
     float Map(float val, float min, float max) => val >= 0 ? val * max : val * Mathf.Abs(min);
     void SetJointRotation(ConfigurableJoint j, float x, float y, float z) { if (j != null) j.targetRotation = Quaternion.Euler(x, y, z); }

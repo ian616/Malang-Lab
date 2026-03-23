@@ -11,33 +11,36 @@ public class GoalDetectionSnowboard : MonoBehaviour
     [Header("Reward Settings")]
     public float successReward = 10.0f;
 
-    [Header("Random Spawn Settings")]
-    public float rangeX = 5.0f;
-    public float rangeZ = 5.0f;
-    public LayerMask groundLayer; 
+    [Header("Random Spawn Range")]
+    public float minX = -5f;
+    public float maxX = 5f;
+    public float minZ = -5f;
+    public float maxZ = 5f;
+    public LayerMask groundLayer;
 
     private MeshRenderer _meshRenderer;
-    private Vector3 _centerPos; 
+    private Vector3 _centerPos;
     private bool _isTriggered = false;
 
     void Awake()
     {
         _meshRenderer = GetComponent<MeshRenderer>();
-        _centerPos = transform.position; 
+        _centerPos = transform.position;
     }
 
     public void ResetGoal()
     {
         _isTriggered = false;
 
-        float randomX = Random.Range(-rangeX, rangeX);
-        float randomZ = Random.Range(-rangeZ, rangeZ);
-        
+        float randomX = Random.Range(minX, maxX);
+        float randomZ = Random.Range(minZ, maxZ);
+
         Vector3 spawnOrigin = _centerPos;
         spawnOrigin.x += randomX;
         spawnOrigin.z += randomZ;
-        spawnOrigin.y += 10f; // 레이 높이 살짝 조정
+        spawnOrigin.y += 10f;
 
+        // 레이캐스트 및 위치 설정 로직 (동일)
         if (Physics.Raycast(spawnOrigin, Vector3.down, out RaycastHit hit, 50f, groundLayer))
         {
             transform.position = hit.point + (hit.normal * 0.01f);
@@ -45,7 +48,6 @@ public class GoalDetectionSnowboard : MonoBehaviour
         }
         else
         {
-            // 레이 실패 시 기본 위치로
             Vector3 fallbackPos = spawnOrigin;
             fallbackPos.y = _centerPos.y;
             transform.position = fallbackPos;
