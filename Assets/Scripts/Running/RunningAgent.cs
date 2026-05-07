@@ -3,9 +3,12 @@ using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
+using System.Collections;
+using Unity.Cinemachine;
 
 public class RunningAgent : Agent
 {
+    [Header("Target & Body Parts")]
     public GameObject target;
     public Rigidbody spine1Rb;
     public ConfigurableJoint hipL, calfL, hipR, calfR, spine2, shoulderL, shoulderR, handL, handR;
@@ -13,24 +16,41 @@ public class RunningAgent : Agent
     public Transform footL, footR;
     public List<GameObject> obstacleList;
 
+    [Header("Movement Settings")]
     public float angleSmooth = 0.2f;
 
+    [Header("GUI Settings")]
+    public int agentIndex = 0;
+
+    [Header("Cinematic Settings (J Key Toggle)")]
+    public CinemachineCamera vCam;      // 인스펙터에서 시네머신 가상 카메라 연결
+    public float zoomFOV = 15f;         // 줌인 목표 화각 (낮을수록 가까움)
+    public float slowMoScale = 0.2f;    // 슬로우 배속 (0.2 = 5배 느림)
+    public float zoomSpeed = 5f;        // 줌 부드러움 (높을수록 빠름)
+
+    // 내부 상태 변수 (보상 및 디스플레이)
     private float[] curActions = new float[12];
     private float m_PreviousDistance, m_StartingZ;
-    private float m_RewardDist, m_RewardUpright, m_RewardFace, m_RewardSide, m_RewardMove, m_RewardTotal, m_DistDelta;
-
-    private float m_DispDist, m_DispUpright, m_DispFace, m_DispSide, m_DispMove, m_DispTotal, m_DispVel, m_DispActualDist;
+    private float m_RewardDist, m_RewardUpright, m_RewardFace, m_RewardSide, m_RewardTotal;
+    private float m_DispDist, m_DispUpright, m_DispFace, m_DispSide, m_DispTotal, m_DispVel, m_DispActualDist;
+    private float m_DispCumulative;
     private float m_GuiTimer;
     private const float GUI_UPDATE_INTERVAL = 0.3f;
+    private float m_ObsRelX, m_ObsRelZ, m_ObsH;
+
+    // 시네마틱 상태 관리 변수
+    private float m_OriginalFOV;
+    private Transform m_OriginalFollow;
+    private Transform m_OriginalLookAt;
+    private bool m_IsCinematicActive = false;
+    private Coroutine m_CinematicCoroutine;
 
     struct RBInit { public Rigidbody rb; public Vector3 pos; public Quaternion rot; }
     List<RBInit> rbInits = new List<RBInit>();
     List<Rigidbody> bodyParts = new List<Rigidbody>();
     private bool isHeadTouching;
     private Transform targetTf;
-
     private int m_ObstacleIndex = 0;
-    private float m_ObsRelX, m_ObsRelZ, m_ObsH;
 
     public override void Initialize()
     {
@@ -39,49 +59,57 @@ public class RunningAgent : Agent
         if (target != null) targetTf = target.transform;
 
         Rigidbody[] allRbs = GetComponentsInChildren<Rigidbody>();
-
         foreach (var rb in allRbs)
         {
             rbInits.Add(new RBInit { rb = rb, pos = rb.position, rot = rb.rotation });
             if (rb != spine1Rb) bodyParts.Add(rb);
+
+            var reporter = rb.gameObject.GetComponent<BodyPartCollisionReporter>();
+            if (reporter == null) reporter = rb.gameObject.AddComponent<BodyPartCollisionReporter>();
+            reporter.agent = this;
         }
 
+        // 초기 카메라 상태 저장
+        if (vCam != null)
+        {
+            m_OriginalFOV = vCam.Lens.FieldOfView;
+            m_OriginalFollow = vCam.Follow;
+            m_OriginalLookAt = vCam.LookAt;
+        }
+
+        // 자체 충돌 무시
         for (int i = 0; i < allRbs.Length; i++)
         {
             for (int j = i + 1; j < allRbs.Length; j++)
             {
                 Collider colA = allRbs[i].GetComponent<Collider>();
                 Collider colB = allRbs[j].GetComponent<Collider>();
-
-                if (colA != null && colB != null)
-                {
-                    Physics.IgnoreCollision(colA, colB);
-                }
+                if (colA != null && colB != null) Physics.IgnoreCollision(colA, colB);
             }
         }
     }
 
     public override void OnEpisodeBegin()
     {
+        // 에피소드 시작 시 시네마틱 효과 강제 종료 및 복구
+        StopCinematicImmediate();
+
         foreach (var s in rbInits)
         {
             s.rb.position = s.pos; s.rb.rotation = s.rot;
             s.rb.linearVelocity = Vector3.zero; s.rb.angularVelocity = Vector3.zero;
             s.rb.Sleep(); s.rb.WakeUp();
         }
-
         for (int i = 0; i < 12; i++) curActions[i] = 0f;
         isHeadTouching = false;
         m_ObstacleIndex = 0;
-
-        if (targetTf != null) m_PreviousDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
-        // 시작 시점의 Z축(좌우) 위치 저장
         m_StartingZ = spine1Rb.position.z;
+        if (targetTf != null) m_PreviousDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        Vector3 toTarget = targetTf.position - spine1Rb.position;
+        Vector3 toTarget = (targetTf != null) ? targetTf.position - spine1Rb.position : Vector3.zero;
         toTarget.y = 0;
         sensor.AddObservation(transform.InverseTransformDirection(toTarget.normalized));
         sensor.AddObservation(toTarget.magnitude);
@@ -102,11 +130,8 @@ public class RunningAgent : Agent
         {
             GameObject curObs = obstacleList[m_ObstacleIndex];
             Vector3 relPos = transform.InverseTransformPoint(curObs.transform.position);
-            // X: 거리(전방), Z: 좌우 편차
-            sensor.AddObservation(relPos.x);
-            sensor.AddObservation(relPos.z);
-            sensor.AddObservation(curObs.transform.localScale.y);
-            sensor.AddObservation(curObs.transform.localScale.x);
+            sensor.AddObservation(relPos.x); sensor.AddObservation(relPos.z);
+            sensor.AddObservation(curObs.transform.localScale.y); sensor.AddObservation(curObs.transform.localScale.x);
             m_ObsRelX = relPos.x; m_ObsRelZ = relPos.z; m_ObsH = curObs.transform.localScale.y;
         }
         else
@@ -119,7 +144,8 @@ public class RunningAgent : Agent
     public override void OnActionReceived(ActionBuffers actions)
     {
         var a = actions.ContinuousActions;
-        for (int i = 0; i < 12; i++) curActions[i] = Mathf.Lerp(curActions[i], Mathf.Clamp(a[i], -1f, 1f), angleSmooth);
+        for (int i = 0; i < 12; i++)
+            curActions[i] = Mathf.Lerp(curActions[i], Mathf.Clamp(a[i], -1f, 1f), angleSmooth);
 
         SetJointRotation(hipL, Map(curActions[0], -20f, 60f), Map(curActions[1], -20f, 20f), 0);
         SetJointRotation(hipR, Map(curActions[2], -20f, 60f), Map(curActions[3], -20f, 20f), 0);
@@ -129,72 +155,193 @@ public class RunningAgent : Agent
         SetJointRotation(shoulderL, Map(curActions[8], -10f, 70f), 0, 0);
         SetJointRotation(shoulderR, Map(curActions[9], -10f, 70f), 0, 0);
 
-        float currentDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
-        m_DistDelta = m_PreviousDistance - currentDistance;
+        float velForward = Vector3.Dot(spine1Rb.linearVelocity, spine1Rb.transform.forward);
+        m_RewardDist = velForward * 0.01f;
         float upDot = Vector3.Dot(spine1Rb.transform.up, Vector3.up);
+        m_RewardUpright = (upDot > 0.8f) ? 0.005f : 0f;
+        float faceDot = Vector3.Dot(spine1Rb.transform.forward, Vector3.left);
+        m_RewardFace = faceDot >= 0.94f ? faceDot * 0.001f : -0.005f;
+        float sideError = Mathf.Abs(spine1Rb.position.z - m_StartingZ);
+        m_RewardSide = -sideError * 0.01f;
 
-        m_RewardDist = m_DistDelta * 0.5f;
-        m_RewardUpright = (upDot < 0.7f) ? 0f : (upDot - 0.7f) / 0.3f * 0.005f;
-        // X축 방향 정렬 보상
-        m_RewardFace = -(1f - Mathf.Clamp(Vector3.Dot(spine1Rb.transform.forward, Vector3.right), -1f, 1f)) * 0.03f;
-        // 사이드 보상: 시작 Z 위치와의 차이 계산
-        m_RewardSide = -Mathf.Pow(spine1Rb.position.z - m_StartingZ, 2) * 0.03f;
-        m_RewardMove = (spine1Rb.linearVelocity.magnitude < 0.2f) ? -0.05f : 0f;
-
-        m_RewardTotal = m_RewardDist + m_RewardUpright + m_RewardFace + m_RewardSide + m_RewardMove;
+        m_RewardTotal = m_RewardDist + m_RewardUpright + m_RewardFace + m_RewardSide;
         AddReward(m_RewardTotal);
 
-        if (upDot < 0.6f || isHeadTouching) { SetReward(-5.0f); EndEpisode(); }
-        m_PreviousDistance = currentDistance;
+        // if (upDot < 0.5f || isHeadTouching)
+        // {
+        //     SetReward(-50.0f);
+        //     EndEpisode(); 
+        // }
 
-        // 장애물 통과 업데이트 (X축 기준)
+        // if (targetTf != null && spine1Rb.position.x <= targetTf.position.x)
+        // {
+        //     AddReward(50f);
+        //     EndEpisode();
+        // }
+
         if (obstacleList != null && m_ObstacleIndex < obstacleList.Count)
         {
-            if (obstacleList[m_ObstacleIndex].transform.position.x - spine1Rb.position.x < -0.6f) m_ObstacleIndex++;
+            if (obstacleList[m_ObstacleIndex].transform.position.x - spine1Rb.position.x < -0.6f)
+                m_ObstacleIndex++;
         }
     }
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.T)) EndEpisode();
+
+        // J 키 토글 기능
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            if (m_IsCinematicActive) StopCinematicWithSmoothReturn();
+            else m_CinematicCoroutine = StartCoroutine(CinematicImpactRoutine());
+        }
+
+        Vector3 pos = spine1Rb.position;
+        Debug.DrawRay(pos, spine1Rb.linearVelocity, Color.cyan);
+        Debug.DrawRay(pos, spine1Rb.transform.forward * 2f, Color.yellow);
+        Debug.DrawRay(pos, Vector3.right * 2f, Color.red);
+
         m_GuiTimer += Time.deltaTime;
         if (m_GuiTimer >= GUI_UPDATE_INTERVAL)
         {
             m_DispDist = m_RewardDist; m_DispUpright = m_RewardUpright; m_DispFace = m_RewardFace;
-            m_DispSide = m_RewardSide; m_DispMove = m_RewardMove; m_DispTotal = m_RewardTotal;
+            m_DispSide = m_RewardSide; m_DispTotal = m_RewardTotal;
             m_DispVel = spine1Rb.linearVelocity.magnitude;
-            m_DispActualDist = Vector3.Distance(spine1Rb.position, targetTf.position);
+            m_DispActualDist = (targetTf != null) ? Vector3.Distance(spine1Rb.position, targetTf.position) : 0;
+            m_DispCumulative = GetCumulativeReward();
             m_GuiTimer = 0f;
         }
     }
 
-    private void OnGUI()
+    void OnGUI()
     {
-        if (Camera.main == null || spine1Rb == null || targetTf == null) return;
-        GUIStyle style = new GUIStyle { fontSize = 28, richText = true };
-        style.normal.textColor = Color.white;
-        GUI.backgroundColor = new Color(0, 0, 0, 0.9f);
-        Rect rect = new Rect(30, 30, 500, 580);
-        GUI.Box(rect, "");
-        string debugText = $"<b><size=32>[ NUPJUK MONITOR ]</size></b>\n" +
-                           $"----------------------------------\n" +
-                           $"Distance : {m_DispActualDist:F2}m\n" +
-                           $"Velocity : {m_DispVel:F2}m/s\n" +
-                           $"----------------------------------\n" +
-                           $"<b>[ OBSTACLE INFO ]</b>\n" +
-                           $"Index    : {m_ObstacleIndex} / {obstacleList?.Count ?? 0}\n" +
-                           $"Rel Dist(X): {m_ObsRelX:F2}m\n" +
-                           $"Rel Side(Z): {m_ObsRelZ:F2}m\n" +
-                           $"----------------------------------\n" +
-                           $"<color=yellow>Forward  : {m_DispDist:F4}</color>\n" +
-                           $"<color=cyan>Upright  : {m_DispUpright:F4}</color>\n" +
-                           $"<color=#FF8C00>Side Pen : {m_DispSide:F4}</color>\n" +
-                           $"----------------------------------\n" +
-                           $"<b>TOTAL    : {m_DispTotal:F4}</b>";
-        GUI.Label(new Rect(rect.x + 20, rect.y + 15, rect.width - 40, rect.height - 30), debugText, style);
+        int w = 340, lineH = 36, pad = 8;
+        int x = agentIndex == 0 ? 10 : Screen.width - w - 10;
+        int y = 10;
+
+        string[] labels = { "Velocity", "Upright", "Facing", "Side", "───────────", "Step Total", "Cumulative" };
+        float[] values = { m_DispDist, m_DispUpright, m_DispFace, m_DispSide, float.NaN, m_DispTotal, m_DispCumulative };
+        Color[] colors = {
+            new Color(0.4f, 1f, 0.4f), new Color(0.4f, 0.8f, 1f),
+            new Color(1f, 1f, 0.4f), new Color(1f, 0.6f, 0.4f),
+            Color.gray,
+            Color.white, new Color(1f, 0.9f, 0.3f)
+        };
+
+        string header = $"Agent {agentIndex}";
+        int rows = labels.Length;
+        float bgH = rows * lineH + lineH + pad * 3;
+
+        GUI.color = new Color(0f, 0f, 0f, 0.65f);
+        GUI.DrawTexture(new Rect(x - 6, y - 6, w + 12, bgH + 12), Texture2D.whiteTexture);
+
+        GUIStyle headerStyle = new GUIStyle(GUI.skin.label) { fontSize = 26, fontStyle = FontStyle.Normal };
+        GUIStyle style = new GUIStyle(GUI.skin.label) { fontSize = 24, fontStyle = FontStyle.Normal };
+
+        GUI.color = Color.white;
+        GUI.Label(new Rect(x, y + pad, w, lineH), header, headerStyle);
+
+        for (int i = 0; i < rows; i++)
+        {
+            GUI.color = colors[i];
+            float ry = y + pad + lineH + i * lineH;
+            if (float.IsNaN(values[i]))
+            {
+                GUI.Label(new Rect(x, ry, w, lineH), labels[i], style);
+            }
+            else
+            {
+                GUI.Label(new Rect(x, ry, 170, lineH), labels[i], style);
+                GUI.Label(new Rect(x + 170, ry, 170, lineH), $"{values[i]:+0.00000;-0.00000}", style);
+            }
+        }
+        GUI.color = Color.white;
     }
 
+    // --- 시네마틱 로직 섹션 ---
+
+    IEnumerator CinematicImpactRoutine()
+    {
+        m_IsCinematicActive = true;
+
+        if (vCam != null && headCol != null)
+        {
+            // 타겟을 머리로 즉시 고정
+            vCam.Follow = headCol.transform;
+            vCam.LookAt = headCol.transform;
+
+            // 슬로우 모션 적용
+            Time.timeScale = slowMoScale;
+            Time.fixedDeltaTime = 0.02f * Time.timeScale;
+
+            Debug.Log("<color=cyan>[CINEMATIC] 줌인 + 슬로우 모션 활성화!</color>");
+
+            // 부드러운 줌인 (Time.unscaledDeltaTime 사용으로 슬로우 영향 안받음)
+            while (vCam.Lens.FieldOfView > zoomFOV + 0.1f)
+            {
+                vCam.Lens.FieldOfView = Mathf.Lerp(vCam.Lens.FieldOfView, zoomFOV, Time.unscaledDeltaTime * zoomSpeed);
+                yield return null;
+            }
+            vCam.Lens.FieldOfView = zoomFOV;
+        }
+    }
+
+    void StopCinematicWithSmoothReturn()
+    {
+        if (!m_IsCinematicActive) return;
+        if (m_CinematicCoroutine != null) StopCoroutine(m_CinematicCoroutine);
+        StartCoroutine(ResetCameraRoutine());
+    }
+
+    IEnumerator ResetCameraRoutine()
+    {
+        Debug.Log("<color=white>[CINEMATIC] 부드러운 복귀 중...</color>");
+
+        // 시간 속도 정상화
+        Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
+
+        // 부드러운 줌 아웃
+        while (vCam.Lens.FieldOfView < m_OriginalFOV - 0.1f)
+        {
+            vCam.Lens.FieldOfView = Mathf.Lerp(vCam.Lens.FieldOfView, m_OriginalFOV, Time.deltaTime * zoomSpeed);
+            yield return null;
+        }
+        
+        vCam.Lens.FieldOfView = m_OriginalFOV;
+        vCam.Follow = m_OriginalFollow;
+        vCam.LookAt = m_OriginalLookAt;
+        m_IsCinematicActive = false;
+    }
+
+    void StopCinematicImmediate()
+    {
+        if (!m_IsCinematicActive) return;
+
+        if (m_CinematicCoroutine != null) StopCoroutine(m_CinematicCoroutine);
+        
+        Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
+
+        if (vCam != null)
+        {
+            vCam.Lens.FieldOfView = m_OriginalFOV;
+            vCam.Follow = m_OriginalFollow;
+            vCam.LookAt = m_OriginalLookAt;
+        }
+        m_IsCinematicActive = false;
+    }
+
+    // --- 기타 헬퍼 함수 ---
     float Map(float val, float min, float max) => val >= 0 ? val * max : val * Mathf.Abs(min);
     void SetJointRotation(ConfigurableJoint j, float x, float y, float z) { if (j != null) j.targetRotation = Quaternion.Euler(x, y, z); }
+    public void OnBodyPartHitObstacle()
+    {
+        SetReward(-50f);
+        EndEpisode();
+    }
+
     private void OnCollisionEnter(Collision collision) { if (collision.collider.CompareTag("Ground")) foreach (var contact in collision.contacts) if (contact.thisCollider == headCol) { isHeadTouching = true; break; } }
     private void OnCollisionExit(Collision collision) { if (collision.collider.CompareTag("Ground")) isHeadTouching = false; }
 
