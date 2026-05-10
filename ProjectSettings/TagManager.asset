@@ -11,6 +11,8 @@ TagManager:
   - Ball
   - Opponent
   - Hurdle
+  - RopeSegment
+  - Rope
   layers:
   - Default
   - TransparentFX

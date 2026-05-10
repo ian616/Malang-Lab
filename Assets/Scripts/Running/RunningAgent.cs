@@ -19,6 +19,10 @@ public class RunningAgent : Agent
     [Header("Movement Settings")]
     public float angleSmooth = 0.2f;
 
+    [Header("Stagnation Settings")]
+    public float stagnationTime = 1.5f;
+    public float stagnationMinDist = 1f;
+
     [Header("GUI Settings")]
     public int agentIndex = 0;
 
@@ -31,9 +35,12 @@ public class RunningAgent : Agent
     // 내부 상태 변수 (보상 및 디스플레이)
     private float[] curActions = new float[12];
     private float m_PreviousDistance, m_StartingZ;
-    private float m_RewardDist, m_RewardUpright, m_RewardFace, m_RewardSide, m_RewardTotal;
-    private float m_DispDist, m_DispUpright, m_DispFace, m_DispSide, m_DispTotal, m_DispVel, m_DispActualDist;
+    private float m_RewardDist, m_RewardUpright, m_RewardFace, m_RewardSide, m_RewardJump, m_RewardTotal;
+    private float m_DispDist, m_DispUpright, m_DispFace, m_DispSide, m_DispJump, m_DispTotal, m_DispVel, m_DispActualDist;
+    private float m_DispHeightDiff;
     private float m_DispCumulative;
+    private int m_DispObstacleIndex;
+    private float m_DispObstacleDist;
     private float m_GuiTimer;
     private const float GUI_UPDATE_INTERVAL = 0.3f;
     private float m_ObsRelX, m_ObsRelZ, m_ObsH;
@@ -51,6 +58,9 @@ public class RunningAgent : Agent
     private bool isHeadTouching;
     private Transform targetTf;
     private int m_ObstacleIndex = 0;
+    private float m_StagnationTimer;
+    private float m_StagnationCheckX;
+    private float m_DispStagnationTimer;
 
     public override void Initialize()
     {
@@ -105,6 +115,8 @@ public class RunningAgent : Agent
         m_ObstacleIndex = 0;
         m_StartingZ = spine1Rb.position.z;
         if (targetTf != null) m_PreviousDistance = Vector3.Distance(spine1Rb.position, targetTf.position);
+        m_StagnationTimer = 0f;
+        m_StagnationCheckX = spine1Rb.position.x;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -126,15 +138,16 @@ public class RunningAgent : Agent
             sensor.AddObservation(transform.InverseTransformDirection(rb.angularVelocity));
         }
 
-        if (obstacleList != null && m_ObstacleIndex < obstacleList.Count)
-        {
-            GameObject curObs = obstacleList[m_ObstacleIndex];
-            Vector3 relPos = transform.InverseTransformPoint(curObs.transform.position);
-            sensor.AddObservation(relPos.x); sensor.AddObservation(relPos.z);
-            sensor.AddObservation(curObs.transform.localScale.y); sensor.AddObservation(curObs.transform.localScale.x);
-            m_ObsRelX = relPos.x; m_ObsRelZ = relPos.z; m_ObsH = curObs.transform.localScale.y;
-        }
-        else
+        // if (obstacleList != null && m_ObstacleIndex < obstacleList.Count)
+        // {
+        //     GameObject curObs = obstacleList[m_ObstacleIndex];
+        //     Vector3 relPos = transform.InverseTransformPoint(curObs.transform.position);
+        //     sensor.AddObservation(-relPos.x);
+        //     sensor.AddObservation(relPos.y);
+        //     sensor.AddObservation(curObs.transform.localScale.y); sensor.AddObservation(curObs.transform.localScale.x);
+        //     m_ObsRelX = relPos.x; m_ObsRelZ = relPos.z; m_ObsH = curObs.transform.localScale.y;
+        // }
+        // else
         {
             sensor.AddObservation(50f); sensor.AddObservation(0f); sensor.AddObservation(0f); sensor.AddObservation(0f);
             m_ObsRelX = 50f; m_ObsRelZ = 0f; m_ObsH = 0f;
@@ -158,7 +171,7 @@ public class RunningAgent : Agent
         float velForward = Vector3.Dot(spine1Rb.linearVelocity, spine1Rb.transform.forward);
         m_RewardDist = velForward * 0.01f;
         float upDot = Vector3.Dot(spine1Rb.transform.up, Vector3.up);
-        m_RewardUpright = (upDot > 0.8f) ? 0.005f : 0f;
+        m_RewardUpright = (upDot > 0.8f) ? 0.001f : 0f;
         float faceDot = Vector3.Dot(spine1Rb.transform.forward, Vector3.left);
         m_RewardFace = faceDot >= 0.94f ? faceDot * 0.001f : -0.005f;
         float sideError = Mathf.Abs(spine1Rb.position.z - m_StartingZ);
@@ -167,11 +180,24 @@ public class RunningAgent : Agent
         m_RewardTotal = m_RewardDist + m_RewardUpright + m_RewardFace + m_RewardSide;
         AddReward(m_RewardTotal);
 
-        // if (upDot < 0.5f || isHeadTouching)
-        // {
-        //     SetReward(-50.0f);
-        //     EndEpisode(); 
-        // }
+        if (upDot < 0.3f || isHeadTouching)
+        {
+            SetReward(-30.0f);
+            EndEpisode();
+        }
+
+        m_StagnationTimer += Time.fixedDeltaTime;
+        float movedX = Mathf.Abs(spine1Rb.position.x - m_StagnationCheckX);
+        if (movedX >= stagnationMinDist)
+        {
+            m_StagnationTimer = 0f;
+            m_StagnationCheckX = spine1Rb.position.x;
+        }
+        else if (m_StagnationTimer >= stagnationTime)
+        {
+            SetReward(-10f);
+            EndEpisode();
+        }
 
         // if (targetTf != null && spine1Rb.position.x <= targetTf.position.x)
         // {
@@ -181,8 +207,27 @@ public class RunningAgent : Agent
 
         if (obstacleList != null && m_ObstacleIndex < obstacleList.Count)
         {
-            if (obstacleList[m_ObstacleIndex].transform.position.x - spine1Rb.position.x < -0.6f)
+            if (spine1Rb.position.x - obstacleList[m_ObstacleIndex].transform.position.x < -0.6f)
                 m_ObstacleIndex++;
+
+
+            if (m_DispObstacleDist < 3.5f && m_DispObstacleDist > -0.5f)
+            {
+                float jumpThreshold = 0.5f;
+
+                if (m_DispHeightDiff > jumpThreshold)
+                {
+                    float jumpConstant = 0.1f;
+                    m_RewardJump = m_DispHeightDiff * upDot * jumpConstant;
+                    AddReward(m_RewardJump);
+                }
+
+            }
+            else
+            {
+                m_RewardJump = 0f;
+            }
+
         }
     }
 
@@ -206,10 +251,20 @@ public class RunningAgent : Agent
         if (m_GuiTimer >= GUI_UPDATE_INTERVAL)
         {
             m_DispDist = m_RewardDist; m_DispUpright = m_RewardUpright; m_DispFace = m_RewardFace;
-            m_DispSide = m_RewardSide; m_DispTotal = m_RewardTotal;
+            m_DispSide = m_RewardSide; m_DispJump = m_RewardJump; m_DispTotal = m_RewardTotal;
+            if (obstacleList != null && m_ObstacleIndex < obstacleList.Count)
+                m_DispHeightDiff = spine1Rb.position.y - obstacleList[m_ObstacleIndex].transform.position.y + 1;
+            else
+                m_DispHeightDiff = float.NaN;
             m_DispVel = spine1Rb.linearVelocity.magnitude;
             m_DispActualDist = (targetTf != null) ? Vector3.Distance(spine1Rb.position, targetTf.position) : 0;
             m_DispCumulative = GetCumulativeReward();
+            m_DispStagnationTimer = m_StagnationTimer;
+            m_DispObstacleIndex = m_ObstacleIndex;
+            if (obstacleList != null && m_ObstacleIndex < obstacleList.Count)
+                m_DispObstacleDist = spine1Rb.position.x - obstacleList[m_ObstacleIndex].transform.position.x;
+            else
+                m_DispObstacleDist = float.NaN;
             m_GuiTimer = 0f;
         }
     }
@@ -220,13 +275,29 @@ public class RunningAgent : Agent
         int x = agentIndex == 0 ? 10 : Screen.width - w - 10;
         int y = 10;
 
-        string[] labels = { "Velocity", "Upright", "Facing", "Side", "───────────", "Step Total", "Cumulative" };
-        float[] values = { m_DispDist, m_DispUpright, m_DispFace, m_DispSide, float.NaN, m_DispTotal, m_DispCumulative };
+        string obstacleLabel = obstacleList != null && m_DispObstacleIndex < obstacleList.Count
+            ? $"Obstacle  {m_DispObstacleIndex + 1}/{obstacleList.Count}"
+            : "Obstacle  -/-";
+        string obstacleDistStr = float.IsNaN(m_DispObstacleDist) ? "   done" : $"{m_DispObstacleDist:+0.00;-0.00} m";
+
+        string heightDiffStr = float.IsNaN(m_DispHeightDiff) ? "   -" : $"{m_DispHeightDiff:+0.00;-0.00} m";
+
+        string stagnationStr = $"{m_DispStagnationTimer:0.0} / {stagnationTime:0.0} s";
+        Color stagnationColor = m_DispStagnationTimer > stagnationTime * 0.7f ? new Color(1f, 0.3f, 0.3f) : new Color(1f, 0.75f, 0.3f);
+
+        string[] labels = { "Velocity", "Upright", "Facing", "Side", "───────────", "Step Total", "Cumulative", "───────────", obstacleLabel, "Obs Dist", "Height Diff", "Jump Reward", "───────────", "Stagnation" };
+        float[] values = { m_DispDist, m_DispUpright, m_DispFace, m_DispSide, float.NaN, m_DispTotal, m_DispCumulative, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN };
+        string[] overrides = { null, null, null, null, null, null, null, null, "", obstacleDistStr, heightDiffStr, $"{m_DispJump:+0.00000;-0.00000}", null, stagnationStr };
         Color[] colors = {
             new Color(0.4f, 1f, 0.4f), new Color(0.4f, 0.8f, 1f),
             new Color(1f, 1f, 0.4f), new Color(1f, 0.6f, 0.4f),
             Color.gray,
-            Color.white, new Color(1f, 0.9f, 0.3f)
+            Color.white, new Color(1f, 0.9f, 0.3f),
+            Color.gray,
+            new Color(0.8f, 0.6f, 1f), new Color(0.8f, 0.6f, 1f),
+            new Color(0.4f, 1f, 0.9f), new Color(0.4f, 1f, 0.9f),
+            Color.gray,
+            stagnationColor
         };
 
         string header = $"Agent {agentIndex}";
@@ -246,14 +317,15 @@ public class RunningAgent : Agent
         {
             GUI.color = colors[i];
             float ry = y + pad + lineH + i * lineH;
-            if (float.IsNaN(values[i]))
+            string valStr = overrides[i] ?? (float.IsNaN(values[i]) ? null : $"{values[i]:+0.00000;-0.00000}");
+            if (valStr == null)
             {
                 GUI.Label(new Rect(x, ry, w, lineH), labels[i], style);
             }
             else
             {
                 GUI.Label(new Rect(x, ry, 170, lineH), labels[i], style);
-                GUI.Label(new Rect(x + 170, ry, 170, lineH), $"{values[i]:+0.00000;-0.00000}", style);
+                GUI.Label(new Rect(x + 170, ry, 170, lineH), valStr, style);
             }
         }
         GUI.color = Color.white;
@@ -308,7 +380,7 @@ public class RunningAgent : Agent
             vCam.Lens.FieldOfView = Mathf.Lerp(vCam.Lens.FieldOfView, m_OriginalFOV, Time.deltaTime * zoomSpeed);
             yield return null;
         }
-        
+
         vCam.Lens.FieldOfView = m_OriginalFOV;
         vCam.Follow = m_OriginalFollow;
         vCam.LookAt = m_OriginalLookAt;
@@ -320,7 +392,7 @@ public class RunningAgent : Agent
         if (!m_IsCinematicActive) return;
 
         if (m_CinematicCoroutine != null) StopCoroutine(m_CinematicCoroutine);
-        
+
         Time.timeScale = 1.0f;
         Time.fixedDeltaTime = 0.02f;
 
@@ -336,10 +408,17 @@ public class RunningAgent : Agent
     // --- 기타 헬퍼 함수 ---
     float Map(float val, float min, float max) => val >= 0 ? val * max : val * Mathf.Abs(min);
     void SetJointRotation(ConfigurableJoint j, float x, float y, float z) { if (j != null) j.targetRotation = Quaternion.Euler(x, y, z); }
+    public void OnBodyPartHitHurdle(string bodyPartName)
+    {
+        Debug.Log($"[Agent {agentIndex}] {bodyPartName} hit hurdle!");
+        AddReward(-30f);
+        EndEpisode();
+    }
+
     public void OnBodyPartHitObstacle()
     {
-        SetReward(-50f);
-        EndEpisode();
+        SetReward(-30f);
+        // EndEpisode();
     }
 
     private void OnCollisionEnter(Collision collision) { if (collision.collider.CompareTag("Ground")) foreach (var contact in collision.contacts) if (contact.thisCollider == headCol) { isHeadTouching = true; break; } }

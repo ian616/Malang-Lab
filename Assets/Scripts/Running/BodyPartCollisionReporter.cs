@@ -8,7 +8,14 @@ public class BodyPartCollisionReporter : MonoBehaviour
     {
         string tag = collision.collider.tag;
         int layer = collision.collider.gameObject.layer;
-        if (tag != "Ground" && tag != "Goal" && layer != LayerMask.NameToLayer("Agent") && layer != LayerMask.NameToLayer("Obstacle"))
+
+        if (layer == LayerMask.NameToLayer("Obstacle"))
+        {
+            agent.OnBodyPartHitHurdle(gameObject.name);
+            return;
+        }
+
+        if (tag != "Ground" && tag != "Goal" && layer != LayerMask.NameToLayer("Agent"))
             agent.OnBodyPartHitObstacle();
     }
 }
